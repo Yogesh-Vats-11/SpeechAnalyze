@@ -1,0 +1,59 @@
+speechalyze/
+│
+├── manage.py
+│
+├── speechalyze/                 # Django project settings
+│   ├── __init__.py
+│   ├── asgi.py
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+│
+├── core/                        # Core app logic
+│   ├── __init__.py
+│   ├── admin.py
+│   ├── apps.py
+│   ├── models.py
+│   ├── tests.py
+│   ├── urls.py
+│   ├── views.py
+│   │
+│   ├── migrations/
+│   │   ├── __init__.py
+│   │   ├── 0001_initial.py
+│   │   ├── 0002_rename_intensity_speechfeature_pause_and_more.py
+│   │   └── 0003_delete_speechfeature.py
+│   │
+│   ├── static/
+│   │   └── core/
+│   │       └── js/
+│   │           └── recorder.js  # Audio recording logic
+│   │
+│   ├── templates/
+│   │   └── core/
+│   │       ├── base.html
+│   │       ├── manual_entry.html
+│   │       └── upload_audio.html
+│   |
+|   ├── utils/
+|   │   └── ml/                      # Machine Learning pipeline
+|   │       ├── data/                # Synthetic / processed datasets
+|   │       ├── model/               # Saved ML models (.pkl)
+|   │       ├── generate_speech_defect_data.py
+|   │       ├── train_model.py
+|   │       ├── predict.py
+|   │       └── predict_cli.py
+|   │   └── speech/  
+│   |        ├── audio/                   # Uploaded / recorded audio files
+│   |        │
+│   |        ├── models/                  # ML-related Django models (if any)
+│   |        │
+│   |        ├── features.py              # Speech feature extraction
+│   |        ├── vosk_model.py            # Speech-to-text (Vosk)
+│
+|   
+├── venv310/                     # Virtual environment
+│   └── Include/
+│
+├── requirements.txt             # Project dependencies
+└── README.md                    # Documentation
