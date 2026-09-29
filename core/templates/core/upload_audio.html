@@ -1,0 +1,122 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md">
+    <h2 class="text-xl font-semibold mb-4">Upload or Record Audio</h2>
+    
+    <input type="file" id="audioFile" accept="audio/*" class="w-full p-2 border rounded">
+    <button id="uploadBtn" class="w-full bg-blue-600 text-white py-2 mt-3 rounded">Upload & Predict</button>
+
+    <hr class="my-4">
+
+    <button id="recordBtn" class="w-full bg-green-600 text-white py-2 rounded">Start Recording</button>
+    <button id="stopBtn" class="w-full bg-red-600 text-white py-2 mt-3 rounded hidden">Stop Recording</button>
+    
+    <p id="statusMsg" class="mt-4 text-lg font-semibold text-center"></p>
+</div>
+
+<div class="max-w-md mt-4 mx-auto bg-white p-6 rounded-lg shadow-md">
+    <a href="{% url 'manual_entry' %}" class="w-full bg-yellow-600 text-white py-2 mt-3 rounded text-center block">Go to Manual Entry</a>
+</div>
+
+<script>
+    function getCSRFToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]').value;
+    }
+</script>
+
+<script src="{% static 'core/js/recorder.js' %}"></script>
+<script>
+$(document).ready(function() {
+    let csrftoken = "{{ csrf_token }}";
+
+    function enableButtons(idStr) {
+        $(idStr).prop("disabled", false);
+    }
+    function disableButtons(idStr) {
+        $(idStr).prop("disabled", true);
+    }
+
+    $("#uploadBtn").click(function() {
+        disableButtons("#uploadBtn, #recordBtn");
+        $("#statusMsg").text("Uploading & Predicting...");
+
+        let formData = new FormData();
+        formData.append("audio", $("#audioFile")[0].files[0]);
+        formData.append("csrfmiddlewaretoken", csrftoken);
+
+        $.ajax({
+            url: "{% url 'upload_audio' %}",
+            type: "POST",
+            processData: false,
+            contentType: false,
+            data: formData,
+            success: function(response) {
+                $("#statusMsg").text("Prediction: " + response.prediction);
+                enableButtons("#uploadBtn, #recordBtn");
+            },
+            error: function() {
+                $("#statusMsg").text("Error predicting. Please try again.");
+                enableButtons("#uploadBtn, #recordBtn");
+            }
+        });
+    });
+
+    let recorder;
+    $("#recordBtn").click(function() {
+        disableButtons("#uploadBtn");
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(function(stream) {
+                let audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                let input = audioContext.createMediaStreamSource(stream);
+                
+                recorder = new Recorder(input, { numChannels: 1 });
+                recorder.record();
+
+                $("#recordBtn").addClass("hidden");
+                $("#stopBtn").removeClass("hidden");
+
+                $("#statusMsg").text("Recording...");
+
+            }).catch(function(err) {
+                console.error("Error accessing microphone:", err);
+                enableButtons("#uploadBtn");
+            });
+    });
+
+    $("#stopBtn").click(function() {
+        if (recorder) {
+            recorder.stop();
+
+            $("#statusMsg").text("Recording stopped. Predicting...");
+
+            recorder.exportWAV(function(blob) {
+                let formData = new FormData();
+                formData.append("audio", blob, "recorded_audio.wav");
+                formData.append("csrfmiddlewaretoken", csrftoken);
+
+                $.ajax({
+                    url: "{% url 'upload_audio' %}",
+                    type: "POST",
+                    processData: false,
+                    contentType: false,
+                    data: formData,
+                    success: function(response) {
+                        $("#statusMsg").text("Prediction: " + response.prediction);
+                        enableButtons("#uploadBtn");
+                    },
+                    error: function() {
+                        $("#statusMsg").text("Error predicting. Please try again.");
+                        enableButtons("#uploadBtn");
+                    }
+                });
+            });
+
+            $("#stopBtn").addClass("hidden");
+            $("#recordBtn").removeClass("hidden");
+        }
+    });
+});
+</script>
+{% endblock %}
